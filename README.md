@@ -263,15 +263,16 @@ means for that phase.
 
 | # | Milestone | Status |
 |---|-----------|--------|
-| 1 | Data model & persistence          | ✅ Done |
-| 2 | Book catalog (CRUD)               | ✅ Done |
-| 3 | Member management                 | ⬜ Not started |
-| 4 | Borrowing & returning workflow    | ⬜ Not started |
-| 5 | Validation & error handling       | 🚧 In progress |
-| 6 | Search & pagination               | ⬜ Not started |
-| 7 | API documentation (Swagger)       | ⬜ Not started |
-| 8 | Containerization (Docker Compose) | ⬜ Not started |
-| 9 | Automated testing                 | 🚧 In progress |
+| 1  | Data model & persistence          | ✅ Done |
+| 2  | Book catalog (CRUD)               | ✅ Done |
+| 3  | Member management                 | ✅ Done |
+| 4  | Borrowing & returning workflow    | ⬜ Not started |
+| 5  | Validation & error handling       | 🚧 In progress |
+| 6  | Search & pagination               | ⬜ Not started |
+| 7  | Security (authentication/authorization) | 🚧 Temporary (open for dev) |
+| 8  | API documentation (Swagger)       | ⬜ Not started |
+| 9  | Containerization (Docker Compose) | ⬜ Not started |
+| 10 | Automated testing                 | 🚧 In progress |
 
 **1. Data model & persistence** — ✅
 Entities (`Book`, `Member`, `BorrowRecord`) with relationships, repositories, and a
@@ -280,8 +281,9 @@ working PostgreSQL connection with auto-generated tables.
 **2. Book catalog (CRUD)** — ✅
 Create, read, update, and delete books through `/api/books`, with request/response DTOs.
 
-**3. Member management** — ⬜
-Register and manage library members through their own endpoints.
+**3. Member management** — ✅
+Register and manage library members through `/api/members` (create, read, list, update,
+delete), with validation. `membershipDate` is set by the server, not the client.
 
 **4. Borrowing & returning workflow** — ⬜ *(the core of the app)*
 Borrow a book (decrement available copies, record the loan, block duplicate unreturned
@@ -296,13 +298,20 @@ responses. *(Basic validation on book creation is in; the global handler is stil
 **6. Search & pagination** — ⬜
 Search books by title / author / genre, and paginate the book listing.
 
-**7. API documentation (Swagger)** — ⬜
+**7. Security (authentication/authorization)** — 🚧 *temporary posture*
+`spring-boot-starter-security` is on the classpath. Right now `SecurityConfig` deliberately
+leaves the API **open** (CSRF disabled, all requests permitted) so features can be built and
+tested without auth. This milestone is complete only once real rules are in place: protected
+vs. public routes, actual users/roles, and a login mechanism. **Replace the temporary config
+before considering the project done.**
+
+**8. API documentation (Swagger)** — ⬜
 Interactive OpenAPI / Swagger UI so the API is self-documenting.
 
-**8. Containerization (Docker Compose)** — ⬜
+**9. Containerization (Docker Compose)** — ⬜
 A `docker-compose.yml` that starts the app and database together with one command.
 
-**9. Automated testing** — 🚧
+**10. Automated testing** — 🚧
 Integration and unit tests covering the key flows. *(One repository integration test
 exists; more coverage to follow, especially around borrow/return.)*
 
