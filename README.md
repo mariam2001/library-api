@@ -233,6 +233,41 @@ PostgreSQL container (separate from `library-postgres`) and throws it away after
 ```
 Validation: `title`, `author`, `isbn` are required (not blank); `totalCopies` must be ≥ 1.
 
+### Members — `/api/members`
+
+| Method   | Path                | Description                | Success status |
+|----------|---------------------|----------------------------|----------------|
+| `POST`   | `/api/members`      | Register a member          | `201 Created`  |
+| `GET`    | `/api/members`      | List all members           | `200 OK`       |
+| `GET`    | `/api/members/{id}` | Get one member by id       | `200 OK`       |
+| `PUT`    | `/api/members/{id}` | Update a member            | `200 OK`       |
+| `DELETE` | `/api/members/{id}` | Delete a member            | `204 No Content` |
+
+`membershipDate` is set by the server on registration, not supplied by the client.
+Validation: `name` required; `email` required and must be a valid address.
+
+### Borrowing — `/api/borrows`
+
+| Method | Path                       | Description                    | Success status |
+|--------|----------------------------|--------------------------------|----------------|
+| `POST` | `/api/borrows`                    | Borrow a book (member + book)      | `201 Created`  |
+| `POST` | `/api/borrows/{id}/return`        | Return a book (by record id)       | `200 OK`       |
+| `GET`  | `/api/borrows/overdue`            | List overdue loans (past due, open)| `200 OK`       |
+| `GET`  | `/api/borrows/member/{memberId}`  | List a member's current loans      | `200 OK`       |
+
+**Borrow request body (`BorrowRequest`):**
+```json
+{ "memberId": 3, "bookId": 1 }
+```
+The server sets `borrowDate` (today) and `dueDate` (today + 14 days). Rules enforced:
+- Unknown `memberId`/`bookId` → `404`
+- Book has no available copies → `409`
+- Member already holds an unreturned copy of that book → `409`
+
+**Return** takes no body — the `{id}` (a borrow record's id) identifies the loan. It stamps
+`returnDate`, restores one available copy, and rejects an already-returned loan (`409`) or an
+unknown record (`404`).
+
 ### Demo — `/api/about`
 
 | Method | Path         | Description                                        |
@@ -266,8 +301,8 @@ means for that phase.
 | 1  | Data model & persistence          | ✅ Done |
 | 2  | Book catalog (CRUD)               | ✅ Done |
 | 3  | Member management                 | ✅ Done |
-| 4  | Borrowing & returning workflow    | ⬜ Not started |
-| 5  | Validation & error handling       | 🚧 In progress |
+| 4  | Borrowing & returning workflow    | ✅ Done |
+| 5  | Validation & error handling       | ✅ Done |
 | 6  | Search & pagination               | ⬜ Not started |
 | 7  | Security (authentication/authorization) | 🚧 Temporary (open for dev) |
 | 8  | API documentation (Swagger)       | ⬜ Not started |
@@ -285,15 +320,16 @@ Create, read, update, and delete books through `/api/books`, with request/respon
 Register and manage library members through `/api/members` (create, read, list, update,
 delete), with validation. `membershipDate` is set by the server, not the client.
 
-**4. Borrowing & returning workflow** — ⬜ *(the core of the app)*
+**4. Borrowing & returning workflow** — ✅ *(the core of the app)*
 Borrow a book (decrement available copies, record the loan, block duplicate unreturned
-loans), return a book (restore the copy, close the record), and query currently borrowed
-and overdue books.
+loans), return a book (restore the copy, close the record), list a member's currently
+borrowed books, and list overdue loans. All flows done and tested.
 
-**5. Validation & error handling** — 🚧
-Request validation across all endpoints, plus a global exception handler that turns
-domain errors (e.g. book-not-found, no-copies-available) into clean, consistent HTTP
-responses. *(Basic validation on book creation is in; the global handler is still to come.)*
+**5. Validation & error handling** — ✅
+Bean Validation on all request DTOs, plus a global exception handler
+(`GlobalExceptionHandler`) that maps domain errors to clean HTTP responses:
+not-found → `404`, business-rule conflicts (no copies / duplicate borrow) → `409`, and
+invalid input → `400` with a field-by-field error list. Uses Spring's `ProblemDetail`.
 
 **6. Search & pagination** — ⬜
 Search books by title / author / genre, and paginate the book listing.
