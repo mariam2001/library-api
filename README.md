@@ -191,6 +191,17 @@ curl -X POST http://localhost:8080/api/books \
 curl http://localhost:8080/api/books
 ```
 
+### 4. Explore the API (Swagger UI)
+
+With the app running, open the interactive API docs in a browser:
+
+- **Swagger UI:** http://localhost:8080/swagger-ui.html — browse every endpoint and use
+  **"Try it out"** to send real requests.
+- **OpenAPI spec (JSON):** http://localhost:8080/v3/api-docs
+
+The docs are generated automatically from the controllers by `springdoc-openapi` — there is
+nothing to maintain by hand.
+
 ---
 
 ## Running the Tests
@@ -316,7 +327,7 @@ means for that phase.
 | 5  | Validation & error handling       | ✅ Done |
 | 6  | Search & pagination               | ✅ Done |
 | 7  | Security (authentication/authorization) | 🚧 Temporary (open for dev) |
-| 8  | API documentation (Swagger)       | ⬜ Not started |
+| 8  | API documentation (Swagger)       | ✅ Done |
 | 9  | Containerization (Docker Compose) | ⬜ Not started |
 | 10 | Automated testing                 | 🚧 In progress |
 
@@ -355,8 +366,10 @@ tested without auth. This milestone is complete only once real rules are in plac
 vs. public routes, actual users/roles, and a login mechanism. **Replace the temporary config
 before considering the project done.**
 
-**8. API documentation (Swagger)** — ⬜
-Interactive OpenAPI / Swagger UI so the API is self-documenting.
+**8. API documentation (Swagger)** — ✅
+Interactive OpenAPI / Swagger UI (via `springdoc-openapi`) so the API is self-documenting.
+The spec is auto-generated from the controllers — no hand-written docs. Available at
+`/swagger-ui.html` (interactive UI) and `/v3/api-docs` (raw OpenAPI JSON).
 
 **9. Containerization (Docker Compose)** — ⬜
 A `docker-compose.yml` that starts the app and database together with one command.
