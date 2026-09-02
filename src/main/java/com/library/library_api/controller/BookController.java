@@ -13,9 +13,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 // @RestController = @Controller + @ResponseBody: every method's return value gets
 // written straight into the HTTP response body as JSON, instead of being treated as
@@ -55,9 +58,29 @@ public class BookController {
         return ResponseEntity.ok(response);
     }
 
+    // Spring builds the Pageable automatically from the query params:
+    //   GET /api/books?page=0&size=20&sort=title,asc
+    // @PageableDefault supplies fallbacks when the client omits them: 20 per page, sorted
+    // by title. The return type is Page<BookResponse>, which Spring serializes to JSON as
+    // a "content" array plus paging metadata (totalElements, totalPages, number, first,
+    // last, ...) - so the client knows how to fetch the next page.
     @GetMapping
-    public ResponseEntity<List<BookResponse>> getAllBooks() {
-        return ResponseEntity.ok(bookService.getAllBooks());
+    public ResponseEntity<Page<BookResponse>> getAllBooks(
+            @PageableDefault(size = 20, sort = "title") Pageable pageable) {
+        return ResponseEntity.ok(bookService.getAllBooks(pageable));
+    }
+
+    // GET /api/books/search?title=harry&page=0&size=20
+    // FIX: search uses a QUERY PARAM (@RequestParam), not a path variable. A path like
+    // "/{title}" would collide with getBook's "/{id}" - both are GET /api/books/{x}, so
+    // Spring couldn't tell them apart and the app would fail to start.
+    // @RequestParam String title reads ?title=... from the URL; Pageable brings the same
+    // page/size/sort support as the main listing.
+    @GetMapping("/search")
+    public ResponseEntity<Page<BookResponse>> searchBooksByTitle(
+            @RequestParam String title,
+            @PageableDefault(size = 20, sort = "title") Pageable pageable) {
+        return ResponseEntity.ok(bookService.findAllBooksByTitle(title, pageable));
     }
 
     @PutMapping("/{id}")

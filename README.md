@@ -216,8 +216,9 @@ PostgreSQL container (separate from `library-postgres`) and throws it away after
 | Method   | Path              | Description                | Success status |
 |----------|-------------------|----------------------------|----------------|
 | `POST`   | `/api/books`      | Create a book              | `201 Created`  |
-| `GET`    | `/api/books`      | List all books             | `200 OK`       |
-| `GET`    | `/api/books/{id}` | Get one book by id         | `200 OK`       |
+| `GET`    | `/api/books`         | List books (paginated)         | `200 OK`       |
+| `GET`    | `/api/books/search`  | Search by title (`?title=...`) | `200 OK`       |
+| `GET`    | `/api/books/{id}`    | Get one book by id             | `200 OK`       |
 | `PUT`    | `/api/books/{id}` | Update a book              | `200 OK`       |
 | `DELETE` | `/api/books/{id}` | Delete a book              | `204 No Content` |
 
@@ -232,6 +233,16 @@ PostgreSQL container (separate from `library-postgres`) and throws it away after
 }
 ```
 Validation: `title`, `author`, `isbn` are required (not blank); `totalCopies` must be ≥ 1.
+
+**Listing is paginated.** `GET /api/books` accepts `page` (0-based), `size`, and `sort`
+query params, e.g. `GET /api/books?page=0&size=20&sort=title,asc` (defaults: page 0,
+size 20, sorted by title). The response wraps the results with paging metadata:
+```json
+{
+  "content": [ { "id": 1, "title": "...", ... } ],
+  "page": { "size": 20, "number": 0, "totalElements": 8, "totalPages": 1 }
+}
+```
 
 ### Members — `/api/members`
 
@@ -303,7 +314,7 @@ means for that phase.
 | 3  | Member management                 | ✅ Done |
 | 4  | Borrowing & returning workflow    | ✅ Done |
 | 5  | Validation & error handling       | ✅ Done |
-| 6  | Search & pagination               | ⬜ Not started |
+| 6  | Search & pagination               | ✅ Done |
 | 7  | Security (authentication/authorization) | 🚧 Temporary (open for dev) |
 | 8  | API documentation (Swagger)       | ⬜ Not started |
 | 9  | Containerization (Docker Compose) | ⬜ Not started |
@@ -331,8 +342,11 @@ Bean Validation on all request DTOs, plus a global exception handler
 not-found → `404`, business-rule conflicts (no copies / duplicate borrow) → `409`, and
 invalid input → `400` with a field-by-field error list. Uses Spring's `ProblemDetail`.
 
-**6. Search & pagination** — ⬜
-Search books by title / author / genre, and paginate the book listing.
+**6. Search & pagination** — ✅
+Paginate the book listing (`GET /api/books` with `page`/`size`/`sort`, stable paged
+response), and search books via `GET /api/books/search?title=...` (case-insensitive
+substring match, also paginated). *(Title search is implemented; author/genre search
+follow the identical derived-query pattern if needed later.)*
 
 **7. Security (authentication/authorization)** — 🚧 *temporary posture*
 `spring-boot-starter-security` is on the classpath. Right now `SecurityConfig` deliberately

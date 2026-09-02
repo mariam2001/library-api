@@ -5,9 +5,9 @@ import com.library.library_api.dto.BookResponse;
 import com.library.library_api.entity.Book;
 import com.library.library_api.exception.BookNotFoundException;
 import com.library.library_api.repository.BookRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 // The service layer sits between the controller (HTTP) and the repository (database).
 // This is where business logic lives - right now that's just mapping between DTOs and
@@ -45,10 +45,14 @@ public class BookService {
         return toResponse(book);
     }
 
-    public List<BookResponse> getAllBooks() {
-        return bookRepository.findAll().stream()
-                .map(this::toResponse)
-                .toList();
+    // Pageable is the "which slice do I want" request (page number, size, sort). It arrives
+    // from the controller, which lets Spring build it from ?page=&size=&sort= query params.
+    // findAll(Pageable) is provided for free by JpaRepository and returns a Page<Book> - the
+    // slice of rows PLUS metadata (total count, total pages, ...). Page has its own .map(),
+    // so we turn Page<Book> into Page<BookResponse> in one call, keeping all that metadata
+    // (no .stream()/.toList() needed here).
+    public Page<BookResponse> getAllBooks(Pageable pageable) {
+        return bookRepository.findAll(pageable).map(this::toResponse);
     }
 
     public BookResponse updateBook(Long id, BookRequest request) {
@@ -72,6 +76,14 @@ public class BookService {
             throw new BookNotFoundException(id);
         }
         bookRepository.deleteById(id);
+    }
+
+    // Now that the repository returns a Page<Book>, we call .map() directly on it (Page has
+    // its own map) to get a Page<BookResponse> - the same clean one-liner as getAllBooks,
+    // and it preserves the paging metadata. No .stream()/.toList() needed.
+    public Page<BookResponse> findAllBooksByTitle(String title, Pageable pageable) {
+        return bookRepository.findByTitleContainingIgnoreCase(title, pageable)
+                .map(this::toResponse);
     }
 
     // Converts an entity into the shape we expose over the API.
