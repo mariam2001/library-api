@@ -134,6 +134,28 @@ You need these installed before running anything:
 
 ## Getting Started
 
+### Quickest way: Docker Compose (app + database, one command)
+
+From the project root, with Docker Desktop running:
+
+```bash
+docker compose up --build       # build + start app and Postgres together
+```
+
+Then open http://localhost:8080 (API) or http://localhost:8080/swagger-ui.html (docs).
+Compose starts Postgres, waits for it to be healthy, then starts the app (which reaches the
+DB by the service name `postgres`, not `localhost`). Useful commands:
+
+```bash
+docker compose up -d --build    # same, but run in the background
+docker compose logs -f app      # follow the app's logs
+docker compose down             # stop and remove the containers (data is kept in a volume)
+docker compose down -v          # also delete the database volume (fresh start)
+```
+
+The sections below describe the alternative **manual** workflow (run Postgres in a container,
+run the app with `mvnw`) — handy for day-to-day development with hot reload.
+
 ### 1. Start a PostgreSQL container
 
 The app connects to a database named `library` with user/password `library`
@@ -328,7 +350,7 @@ means for that phase.
 | 6  | Search & pagination               | ✅ Done |
 | 7  | Security (authentication/authorization) | 🚧 Temporary (open for dev) |
 | 8  | API documentation (Swagger)       | ✅ Done |
-| 9  | Containerization (Docker Compose) | ⬜ Not started |
+| 9  | Containerization (Docker Compose) | ✅ Done |
 | 10 | Automated testing                 | 🚧 In progress |
 
 **1. Data model & persistence** — ✅
@@ -371,8 +393,10 @@ Interactive OpenAPI / Swagger UI (via `springdoc-openapi`) so the API is self-do
 The spec is auto-generated from the controllers — no hand-written docs. Available at
 `/swagger-ui.html` (interactive UI) and `/v3/api-docs` (raw OpenAPI JSON).
 
-**9. Containerization (Docker Compose)** — ⬜
-A `docker-compose.yml` that starts the app and database together with one command.
+**9. Containerization (Docker Compose)** — ✅
+A multi-stage `Dockerfile` packages the app, and `docker-compose.yml` starts the app +
+Postgres together with one command (`docker compose up`). The app waits for Postgres to be
+healthy before starting, and reaches it by service name over the Compose network.
 
 **10. Automated testing** — 🚧
 Integration and unit tests covering the key flows. *(One repository integration test

@@ -1,0 +1,51 @@
+# Two services that make up the whole app. Start everything with: docker compose up
+# (Modern Compose needs no "version:" key.)
+services:
+
+  # ---- The database ----
+  postgres:
+    image: postgres:16
+    environment:
+      # These create the database + user on first startup - same values our app expects.
+      POSTGRES_DB: library
+      POSTGRES_USER: library
+      POSTGRES_PASSWORD: library
+    ports:
+      # Publish to the host too, so you can still connect with psql/DBeaver from your machine.
+      - "5432:5432"
+    volumes:
+      # A named volume keeps the data on disk across `docker compose down`/restarts, so your
+      # books/members aren't wiped every time the container is recreated.
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # Compose uses this to know when Postgres is actually READY to accept connections
+      # (not just "container started"). The app waits for this below.
+      test: ["CMD-SHELL", "pg_isready -U library"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ---- Our Spring Boot app ----
+  app:
+    # Build the image from the Dockerfile in this directory (instead of pulling a prebuilt one).
+    build: .
+    depends_on:
+      postgres:
+        # Don't start the app until Postgres reports HEALTHY - this prevents the
+        # "connection refused" race we hit when the app booted before the DB was ready.
+        condition: service_healthy
+    environment:
+      # THE KEY LINE: inside the Compose network, the app reaches the DB by the SERVICE
+      # NAME "postgres", not "localhost". These env vars override spring.datasource.* from
+      # application.properties (Spring maps SPRING_DATASOURCE_URL -> spring.datasource.url),
+      # so local `mvnw` dev still uses localhost while Compose uses the postgres service.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/library
+      SPRING_DATASOURCE_USERNAME: library
+      SPRING_DATASOURCE_PASSWORD: library
+    ports:
+      # Publish the app's 8080 to your machine, so http://localhost:8080 works as before.
+      - "8080:8080"
+
+# Declares the named volume used above.
+volumes:
+  postgres-data:
