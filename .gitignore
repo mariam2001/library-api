@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local app run logs (temp, not source) ###
+applog.txt
+apperr.txt
