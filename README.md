@@ -351,7 +351,7 @@ means for that phase.
 | 7  | Security (authentication/authorization) | 🚧 Temporary (open for dev) |
 | 8  | API documentation (Swagger)       | ✅ Done |
 | 9  | Containerization (Docker Compose) | ✅ Done |
-| 10 | Automated testing                 | 🚧 In progress |
+| 10 | Automated testing                 | ✅ Done |
 
 **1. Data model & persistence** — ✅
 Entities (`Book`, `Member`, `BorrowRecord`) with relationships, repositories, and a
@@ -398,9 +398,16 @@ A multi-stage `Dockerfile` packages the app, and `docker-compose.yml` starts the
 Postgres together with one command (`docker compose up`). The app waits for Postgres to be
 healthy before starting, and reaches it by service name over the Compose network.
 
-**10. Automated testing** — 🚧
-Integration and unit tests covering the key flows. *(One repository integration test
-exists; more coverage to follow, especially around borrow/return.)*
+**10. Automated testing** — ✅
+Integration tests (via **Testcontainers** — a real throwaway Postgres per run) covering the
+core flows:
+- `BorrowRecordRepositoryTest` — `@DataJpaTest` slice: the entity/repository mapping.
+- `BorrowServiceIntegrationTest` — `@SpringBootTest`: borrow happy path + the no-copies and
+  duplicate-borrow rules.
+- `ReturnFlowIntegrationTest` — `@SpringBootTest`: return restores a copy and closes the
+  loan, plus already-returned and unknown-record rejections.
+
+Run with `./mvnw test`.
 
 ---
 
